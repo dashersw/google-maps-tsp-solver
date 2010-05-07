@@ -1,59 +1,22 @@
 /*
-  This reasonably encapsulates reusable functionality for resolving TSP problems, and uses
-    a subset of the code from the original OptiMap Google Map TSP Solver.
-  The author of this refactoring is James Tolley <info [at] gmaptools.com>
-      Please contact me if you are planning on using this code.
-  The author of the original code is Geir K. Engdahl <geir.engdahl (at) gmail.com>
+  This encapsulates reusable functionality for resolving TSP problems on
+  Google Maps.
+  The authors of this code are James Tolley <info [at] gmaptools.com>
+  and Geir K. Engdahl <geir.engdahl (at) gmail.com>
 
-  version 0.9; 08/30/08
+  For the most up-to-date version of this file, see
+  http://code.google.com/p/google-maps-tsp-solver/
+
+  To receive updates, subscribe to google-maps-tsp-solver@googlegroups.com
+
+  version 1.0; 05/07/10
 
   // Usage:
-  var tsp = new BpTsp(map?, panel?, onFatalError?); // if these are passed, they will be updated (as GDirections)
-
-  tsp.addWaypoint(latLng); // no reverse geocode, so no callback
-  tsp.addAddress(addressStr, onGeocode);
-  // ... up to and including 24 locations total
-
-  var bool = tsp.isReady(); // are all of the addresses geocoded?
-
-  // will update the map and/or panel if they were passed in the constructor
-  // if there are geocodes outstanding, these will wait until they're all retrieved and then run
-  tsp.solveRoundTrip(callback); // or:
-  tsp.solveAtoZ(callback);
-
-  // other methods:
-  tsp.startOver(); // restores original state, aside from the original arguments: map, panel, and onFatalError
-  var addrs_array = tsp.getAddresses();
-  var wpts_array  = tsp.getWaypoints();
-  var success = tsp.removeAddress(addr);
-  var success = tsp.removeWaypoint(wpt);
-  var gdir = tsp.getGDirections();
-
-  function callback(tsp) {
-    var dirs      = tsp.getGDirections(); // low-level control
-  }
-
-  function onFatalError(tsp, errMsg) {
-    alert('Cannot continue after ' + errMsg + '. Call tsp.startOver() to continue.');
-  }
-
-  function onGeocode(address, latlng) {
-    if (latlng)
-      alert(address + ' found: ' + latlng.toString());
-    else
-      alert(address + ' not found!');
-  }
-
+  See http://code.google.com/p/google-maps-tsp-solver/
 */
 
 (function() {
 
-/* The author of the code below code is Geir K. Engdahl, and can be reached
- * at geir.engdahl (at) gmail.com
- * 
- * If you intend to use the code or derive code from it, please
- * consult with the author.
- */ 
 var tsp; // singleton
 var gebMap;           // The map DOM object
 var directionsPanel;  // The driving directions DOM object
