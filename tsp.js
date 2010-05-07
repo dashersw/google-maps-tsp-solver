@@ -1,8 +1,14 @@
 /*
-  These are the implementation-specific parts of the original OptiMap.
+  These are the implementation-specific parts of the OptiMap application at
+  http://www.gebweb.net/optimap
+
+  This should serve as an example on how to use the more general BpTspSolver.js
+  from http://code.google.com/p/google-maps-tsp-solver/
+
+  Author: Geir K. Engdahl
 */
 
-var tsp; // The BtTspSolver object which handles the TSP computation.
+var tsp; // The BpTspSolver object which handles the TSP computation.
 var mode;
 var waypointLabels = new Array();  // Optional labels for each waypoint.
 var reasons = new Array();
