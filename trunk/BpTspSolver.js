@@ -587,7 +587,7 @@ function addWaypoint(latLng) {
 }
 
 function addAddress(address, callback) {
-  addressRequests++;
+  ++addressRequests;
   gebGeocoder.getLatLng(address, function(latLng) {
     addressRequests--;
     if (!latLng) {
