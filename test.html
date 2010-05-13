@@ -15,6 +15,7 @@ type="text/javascript"></script>
 <script type="text/javascript" src="BpTspSolver.js"></script> 
 <script type="text/javascript">
 var tsp; // The BpTspSolver object which handles the TSP computation.
+var isDone = false;
 var reasons = new Array();
 reasons[G_GEO_SUCCESS]            = "Success";
 reasons[G_GEO_MISSING_ADDRESS]    = "Missing Address: The address was either missing or had no value.";
@@ -200,9 +201,16 @@ function onSolveCallback(myTsp) {
     orderStr += tsp.getOrder()[i] + " ";
   }
   document.getElementById("ordering").innerHTML = orderStr;
+
+  isDone = true;
+}
+
+function isDone() {
+  return isDone;
 }
 
 function init() {
+  isDone = false;
   loadAtStart(37.4419, -122.1419, 8);
 }
 </script>  
