@@ -725,6 +725,11 @@ BpTspSolver.prototype.getDurations = function() {
   return dur;
 }
 
+// Helper functions
+BpTspSolver.prototype.getTotalDuration = function() {
+  return gebDirections.getDuration().seconds;
+}
+
 // we assume that we have enough waypoints
 BpTspSolver.prototype.isReady = function() {
   return addressRequests == 0;
