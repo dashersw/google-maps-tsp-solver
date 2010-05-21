@@ -1,0 +1,28 @@
+#summary How to run the solver test suite
+
+= Introduction =
+
+In order to run the tests, you must have *java*, *python* and *selenium rc* installed. Selenium RC can be downloaded from [http://seleniumhq.org/download/ SeleniumHQ]. 
+
+= Details =
+
+Start the selenium server:
+
+{{{
+cd where_you_downloaded_selenium_rc/selenium-remote-control-1.0.3/selenium-server-1.0.3/
+java -jar selenium-server.jar
+}}}
+
+Then copy the selenium python client files to your google-maps-tsp-solver working directory:
+
+{{{
+cp where_you_downloaded_selenium_rc/selenium-remote-control-1.0.3/selenium-python-client-driver-1.0.1/*.py google-maps-tsp-solver/
+}}}
+
+Now run the tests with the gebweb.net version of the source files:
+
+{{{
+python selenium-tests.py
+}}}
+
+To test new versions of the .js files, upload the test.html and the .js files to your own server, change selenium-test.py to point to this server, and re-run the tests.
