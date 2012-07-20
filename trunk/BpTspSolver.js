@@ -601,7 +601,7 @@
       durations = new Array();
       chunkNode = 0;
       if (typeof onProgressCallback == 'function') {
-	onProgressCallback(tsp);
+	    onProgressCallback(tsp);
       }
       nextChunk(mode);
     }
@@ -647,7 +647,9 @@
 	      durations.push(directionsResult.routes[0].legs[i].duration.value);
 	      distances.push(directionsResult.routes[0].legs[i].distance.value);
 	    }
-	    onProgressCallback(tsp);
+	    if (typeof onProgressCallback == 'function') {
+	      onProgressCallback(tsp);
+	    }
 	  }
 	  nextChunk(mode);
 	});
