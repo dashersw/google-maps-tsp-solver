@@ -84,7 +84,7 @@ function formatDirections(gdir, mode) {
 	var colour = "g";
 	var number = i+1;
 	retStr += "\t<tr class='heading'><td class='heading' width=40>"
-	    + "<div class='centered-directions'><img src='icons/black"
+	    + "<div class='centered-directions'><img src='iconsnew/black"
 	    + number + ".png'></div></td>"
 	    + "<td class='heading'><div class='centered-directions'>";
 	var headerStr;
@@ -99,7 +99,7 @@ function formatDirections(gdir, mode) {
 	}
 	dragStr += "<li id='" + i + "' class='ui-state-"
 	  + (i ? "default" : "disabled") + "'>"
-	  + "<table class='dragTable'><tr><td class='left'><img src='icons/black"
+	  + "<table class='dragTable'><tr><td class='left'><img src='iconsnew/black"
 	  + number + ".png' /></td><td class='middle'>" + headerStr + "</td><td class='right'>"
 	  + (i ? "<button id='dragClose" + i + "' value='" + i + "'></button>" : "")
 	  + "</td></tr></table></li>"; 
@@ -130,11 +130,11 @@ function formatDirections(gdir, mode) {
 	    headerStr = latLng.toString();
 	}
 	dragStr += "<li id='" + 0 + "' class='ui-state-disabled'>"
-	  + "<table class='dragTable'><tr><td><img src='icons/black"
+	  + "<table class='dragTable'><tr><td><img src='iconsnew/black"
 	  + 1 + ".png' /></td><td>" + headerStr
 	  + "</td></tr></table></li>"; 
 	retStr += "\t<tr class='heading'><td class='heading'>"
-	    + "<div class='centered-directions'><img src='icons/black1.png'></div></td>"
+	    + "<div class='centered-directions'><img src='iconsnew/black1.png'></div></td>"
 	    + "<td class='heading'>"
 	    + "<div class='centered-directions'>" 
 	    + headerStr + "</div></td></tr>\n";
@@ -149,11 +149,11 @@ function formatDirections(gdir, mode) {
 	    headerStr = addr[order[gdir.legs.length]];
 	}
 	dragStr += "<li id='" + gdir.legs.length + "' class='ui-state-disabled'>"
-	  + "<table class='dragTable'><tr><td><img src='icons/black"
+	  + "<table class='dragTable'><tr><td><img src='iconsnew/black"
 	  + (gdir.legs.length + 1) + ".png' /></td><td>"
 	  + headerStr + "</td></tr></table></li>"; 
 	retStr += "\t<tr class='heading'><td class='heading'>"
-	    + "<div class='centered-directions'><img src='icons/black"
+	    + "<div class='centered-directions'><img src='iconsnew/black"
 	    + (gdir.legs.length + 1) + ".png'></div></td>"
 	    + "<td class='heading'>"
 	    + "<div class='centered-directions'>" 
@@ -178,9 +178,30 @@ function createTomTomLink(gdir) {
 	    label2[i] = labels[order[i]];
     }
     var itn = createTomTomItineraryItn(gdir, addr2, label2);
-    var retStr = "<form method='GET' action='tomtom.php'>\n";
+    var retStr = "<form method='GET' action='tomtom.php' target='tomTomIFrame'>\n";
     retStr += "<input type='hidden' name='itn' value='" + itn + "' />\n";
-    retStr += "<input id='tomTomButton' class='calcButton' type='submit' value='Send to TomTom' />\n";
+    retStr += "<input id='tomTomButton' class='calcButton' type='submit' value='Send to TomTom' onClick='jQuery(\"#dialogTomTom\").dialog(\"open\");'/>\n";
+    retStr += "</form>\n";
+    return retStr;
+}
+
+function createGarminLink(gdir) {
+    var addr = tsp.getAddresses();
+    var labels = tsp.getLabels();
+    var order = tsp.getOrder();
+    var addr2 = new Array();
+    var label2 = new Array();
+    for (var i = 0; i < order.length; ++i) {
+	addr2[i] = addr[order[i]];
+	if (order[i] < labels.length && labels[order[i]] != null && labels[order[i]] != "")
+	    label2[i] = labels[order[i]];
+    }
+    var gpx = createGarminGpx(gdir, addr2, label2);
+    var gpxWp = createGarminGpxWaypoints(gdir, addr2, label2);
+    var retStr = "<form method='POST' action='garmin.php' target='garminIFrame'>\n";
+    retStr += "<input type='hidden' name='gpx' value='" + gpx + "' />\n";
+    retStr += "<input type='hidden' name='gpxWp' value='" + gpxWp + "' />\n";
+    retStr += "<input id='garminButton' class='calcButton' type='submit' value='Send to Garmin' onClick='jQuery(\"#dialogGarmin\").dialog(\"open\");'/>\n";
     retStr += "</form>\n";
     return retStr;
 }
@@ -196,7 +217,7 @@ function createGoogleLink(gdir) {
 	    ret += " to:";
 	}
 	if (addr[order[i]] != null && addr[order[i]] != "") {
-	    ret += addr[order[i]];
+	  ret += escape(addr[order[i]]);
 	} else {
 	    if (i == 0) {
 		ret += gdir.legs[0].start_location.toString();
@@ -229,7 +250,7 @@ function getWindowWidth() {
 }
 
 function onProgressCallback(tsp) {
-  $('#progressBar').progressbar('value', 100 * tsp.getNumDirectionsComputed() / tsp.getNumDirectionsNeeded());
+  jQuery('#progressBar').progressbar('value', 100 * tsp.getNumDirectionsComputed() / tsp.getNumDirectionsNeeded());
 }
 
 function setMarkerAsStart(marker) {
@@ -252,7 +273,7 @@ function removeMarker(marker) {
 
 function drawMarker(latlng, addr, label, num) {
     var icon;
-    icon = new google.maps.MarkerImage("icons/red" + (num + 1) + ".png");
+    icon = new google.maps.MarkerImage("iconsnew/red" + (num + 1) + ".png");
     var marker = new google.maps.Marker({ 
         position: latlng, 
 	icon: icon, 
@@ -393,7 +414,7 @@ function startOver() {
 }
 
 function directions(m, walking, avoid) {
-    $('#dialogProgress').dialog('open');
+    jQuery('#dialogProgress').dialog('open');
     mode = m;
     tsp.setAvoidHighways(avoid);
     if (walking)
@@ -431,7 +452,7 @@ function removeOldMarkers() {
 }
 
 function onSolveCallback(myTsp) {
-  $('#dialogProgress').dialog('close');
+  jQuery('#dialogProgress').dialog('close');
     var dirRes = tsp.getGDirections();
     var dir = dirRes.routes[0];
     // Print shortest roundtrip data:
@@ -440,24 +461,32 @@ function onSolveCallback(myTsp) {
     pathStr += "Trip length: " + formatLength(getTotalDistance(dir)) + 
       " (" + formatLengthMiles(getTotalDistance(dir)) + ")</p>";
     document.getElementById("path").innerHTML = pathStr;
-    document.getElementById("exportDataButton").innerHTML = "<input id='rawButton' class='calcButton' type='button' value='Toggle raw path output' onClick='toggle(\"exportData\");'>";
+    document.getElementById("exportDataButton").innerHTML = "<input id='rawButton' class='calcButton' type='button' value='Toggle raw path output' onClick='toggle(\"exportData\"); document.getElementById(\"outputList\").select();'>";
     var durStr = "<input id='csvButton' class='calcButton' type='button' value='Toggle csv durations matrix' onClick='toggle(\"durationsData\");'>";
     document.getElementById("durations").innerHTML = durStr;
+    document.getElementById("exportLabelButton").innerHTML = "<input id='rawLabelButton' class='calcButton' type='button' value='Raw path with labels' onClick='toggle(\"exportLabelData\"); document.getElementById(\"outputLabelList\").select();'>"
+    document.getElementById("exportAddrButton").innerHTML = "<input id='rawAddrButton' class='calcButton' type='button' value='Optimal address order' onClick='toggle(\"exportAddrData\"); document.getElementById(\"outputAddrList\").select();'>"
+    document.getElementById("exportOrderButton").innerHTML = "<input id='rawOrderButton' class='calcButton' type='button' value='Optimal numeric order' onClick='toggle(\"exportOrderData\"); document.getElementById(\"outputOrderList\").select();'>"
 
     var formattedDirections = formatDirections(dir, mode);
     document.getElementById("routeDrag").innerHTML = formattedDirections[0];
     document.getElementById("my_textual_div").innerHTML = formattedDirections[1];
+    document.getElementById("garmin").innerHTML = createGarminLink(dir);
     document.getElementById("tomtom").innerHTML = createTomTomLink(dir);
-    document.getElementById("exportGoogle").innerHTML = "<input id='googleButton' value='View in Google Maps' type='button' class='calcButton' onClick='window.location.href=\"" + createGoogleLink(dir) + "\";' />";
+    document.getElementById("exportGoogle").innerHTML = "<input id='googleButton' value='View in Google Maps' type='button' class='calcButton' onClick='window.open(\"" + createGoogleLink(dir) + "\");' />";
     document.getElementById("reverseRoute").innerHTML = "<input id='reverseButton' value='Reverse' type='button' class='calcButton' onClick='reverseRoute()' />";
-    $('#reverseButton').button();
-    $('#rawButton').button();
-    $('#csvButton').button();
-    $('#googleButton').button();
-    $('#tomTomButton').button();
+    jQuery('#reverseButton').button();
+    jQuery('#rawButton').button();
+    jQuery('#rawLabelButton').button();
+    jQuery('#csvButton').button();
+    jQuery('#googleButton').button();
+    jQuery('#tomTomButton').button();
+    jQuery('#garminButton').button();
+    jQuery('#rawAddrButton').button();
+    jQuery('#rawOrderButton').button();
 
-    $("#sortable").sortable({ stop: function(event, ui) {
-	  var perm = $("#sortable").sortable("toArray");
+    jQuery("#sortable").sortable({ stop: function(event, ui) {
+	  var perm = jQuery("#sortable").sortable("toArray");
 	  var numPerm = new Array(perm.length + 2);
 	  numPerm[0] = 0;
 	  for (var i = 0; i < perm.length; i++) {
@@ -466,10 +495,10 @@ function onSolveCallback(myTsp) {
 	  numPerm[numPerm.length - 1] = numPerm.length - 1;
 	  tsp.reorderSolution(numPerm, onSolveCallback);
 	} });
-    $("#sortable").disableSelection();
+    jQuery("#sortable").disableSelection();
     for (var i = 1; i < dir.legs.length; ++i) {
       var finalI = i;
-      $("#dragClose" + i).button({
+      jQuery("#dragClose" + i).button({
 	icons: { primary: "ui-icon-close" },
 	    text: false
 	    }).click(function() {
@@ -481,7 +510,7 @@ function onSolveCallback(myTsp) {
     // Add nice, numbered icons.
     if (mode == 1) {
 	var myPt1 = dir.legs[0].start_location;
-	var myIcn1 = new google.maps.MarkerImage("icons/black1.png");
+	var myIcn1 = new google.maps.MarkerImage("iconsnew/black1.png");
 	var marker = new google.maps.Marker({ 
             position: myPt1, 
 	    icon: myIcn1, 
@@ -493,9 +522,9 @@ function onSolveCallback(myTsp) {
 	var myPt1 = route.end_location;
 	var myIcn1;
 	if (i == dir.legs.length - 1 && mode == 0) {
-	    myIcn1 = new google.maps.MarkerImage("icons/black1.png");
+	    myIcn1 = new google.maps.MarkerImage("iconsnew/black1.png");
 	} else {
-	    myIcn1 = new google.maps.MarkerImage("icons/black" + (i+2) + ".png");
+	    myIcn1 = new google.maps.MarkerImage("iconsnew/black" + (i+2) + ".png");
 	}
 	var marker = new google.maps.Marker({
             position: myPt1,
@@ -515,14 +544,68 @@ function onSolveCallback(myTsp) {
 	preserveViewport: false,
 	suppressInfoWindows: true,
 	suppressMarkers: true });
-    
+
+    // Raw path output
     var bestPathLatLngStr = dir.legs[0].start_location.toString() + "\n";
     for (var i = 0; i < dir.legs.length; ++i) {
 	bestPathLatLngStr += dir.legs[i].end_location.toString() + "\n";
     }
     document.getElementById("exportData_hidden").innerHTML = 
-	"<textarea name='outputList' rows='10' cols='40'>" 
+	"<textarea id='outputList' rows='10' cols='40'>" 
 	+ bestPathLatLngStr + "</textarea><br>";
+
+    // Raw path output with labels
+    var labels = tsp.getLabels();
+    var order = tsp.getOrder();
+    var bestPathLabelStr = "";
+    if (labels[order[0]] == null) {
+      bestPathLabelStr += order[0];
+    } else {
+      bestPathLabelStr += labels[order[0]];
+    }
+    bestPathLabelStr += ": " + dir.legs[0].start_location.toString() + "\n";
+    for (var i = 0; i < dir.legs.length; ++i) {
+      if (labels[order[i+1]] == null) {
+	bestPathLabelStr += order[i+1];
+      } else {
+	bestPathLabelStr += labels[order[i+1]];
+      }
+      bestPathLabelStr += ": " + dir.legs[i].end_location.toString() + "\n";
+    }
+    document.getElementById("exportLabelData_hidden").innerHTML = 
+	"<textarea id='outputLabelList' rows='10' cols='40'>" 
+      + bestPathLabelStr + "</textarea><br>";
+
+    // Optimal address order
+    var addrs = tsp.getAddresses();
+    var order = tsp.getOrder();
+    var bestPathAddrStr = "";
+    if (addrs[order[0]] == null) {
+      bestPathAddrStr += dir.legs[0].start_location.toString();
+    } else {
+      bestPathAddrStr += addrs[order[0]];
+    }
+    bestPathAddrStr += "\n";
+    for (var i = 0; i < dir.legs.length; ++i) {
+      if (addrs[order[i+1]] == null) {
+	bestPathAddrStr += dir.legs[i].end_location.toString();
+      } else {
+	bestPathAddrStr += addrs[order[i+1]];
+      }
+      bestPathAddrStr += "\n";
+    }
+    document.getElementById("exportAddrData_hidden").innerHTML = 
+	"<textarea id='outputAddrList' rows='10' cols='40'>" 
+      + bestPathAddrStr + "</textarea><br>";
+
+    // Optimal numeric order
+    var bestOrderStr = "";
+    for (var i = 0; i < order.length; ++i) {
+      bestOrderStr += "" + (order[i] + 1) + "\n";
+    }
+    document.getElementById("exportOrderData_hidden").innerHTML =
+        "<textarea id='outputOrderList' rows='10' cols='40'>" 
+      + bestOrderStr + "</textarea><br>";
 
     var durationsMatrixStr = "";
     var dur = tsp.getDurations();
@@ -544,7 +627,8 @@ function onSolveCallback(myTsp) {
 function clickedAddList() {
   var val = document.listOfLocations.inputList.value;
   val = val.replace(/\t/g, ' ');
-  addList(document.listOfLocations.inputList.value);
+  document.listOfLocations.inputList.value = val;
+  addList(val);
 }
 
 function addList(listStr) {
@@ -558,6 +642,15 @@ function addList(listStr) {
 	    // Line looks like lat, lng.
 	    var cleanStr = listLine.replace(/[^\d.,-]/g, "");
 	    var latLngArr = cleanStr.split(",");
+	    if (latLngArr.length == 2) {
+		var lat = parseFloat(latLngArr[0]);
+		var lng = parseFloat(latLngArr[1]);
+		var latLng = new google.maps.LatLng(lat, lng);
+		tsp.addWaypoint(latLng, addWaypointSuccessCallbackZoom);
+	    }
+	} else if (listLine.match(/\(?\-?\d*\.\d+\s+\-?\d*\.\d+/)) {
+	  // Line looks like lat lng
+	    var latLngArr = listline.split(" ");
 	    if (latLngArr.length == 2) {
 		var lat = parseFloat(latLngArr[0]);
 		var lng = parseFloat(latLngArr[1]);
