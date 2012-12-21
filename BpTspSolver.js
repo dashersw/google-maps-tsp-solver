@@ -31,25 +31,10 @@
   var avoidHighways = false; // Whether to avoid highways. False by default.
   var travelMode;
   var distIndex;
+  var GEO_STATUS_MSG;
+  var DIR_STATUS_MSG;
   var waypoints = new Array();
   var addresses = new Array();
-  var GEO_STATUS_MSG = new Array();
-  var DIR_STATUS_MSG = new Array();
-  GEO_STATUS_MSG[google.maps.GeocoderStatus.OK] = "Success.";
-  GEO_STATUS_MSG[google.maps.GeocoderStatus.INVALID_REQUEST] = "Request was invalid.";
-  GEO_STATUS_MSG[google.maps.GeocoderStatus.ERROR] = "There was a problem contacting the Google servers.";
-  GEO_STATUS_MSG[google.maps.GeocoderStatus.OVER_QUERY_LIMIT] = "The webpage has gone over the requests limit in too short a period of time.";
-  GEO_STATUS_MSG[google.maps.GeocoderStatus.REQUEST_DENIED] = "The webpage is not allowed to use the geocoder.";
-  GEO_STATUS_MSG[google.maps.GeocoderStatus.UNKNOWN_ERROR] = "A geocoding request could not be processed due to a server error. The request may succeed if you try again.";
-  GEO_STATUS_MSG[google.maps.GeocoderStatus.ZERO_RESULTS] = "No result was found for this GeocoderRequest.";
-  DIR_STATUS_MSG[google.maps.DirectionsStatus.INVALID_REQUEST] = "The DirectionsRequest provided was invalid.";
-  DIR_STATUS_MSG[google.maps.DirectionsStatus.MAX_WAYPOINTS_EXCEEDED] = "Too many DirectionsWaypoints were provided in the DirectionsRequest. The total allowed waypoints is 8, plus the origin and destination.";
-  DIR_STATUS_MSG[google.maps.DirectionsStatus.NOT_FOUND] = "At least one of the origin, destination, or waypoints could not be geocoded.";
-  DIR_STATUS_MSG[google.maps.DirectionsStatus.OK] = "The response contains a valid DirectionsResult.";
-  DIR_STATUS_MSG[google.maps.DirectionsStatus.OVER_QUERY_LIMIT] = "The webpage has gone over the requests limit in too short a period of time.";
-  DIR_STATUS_MSG[google.maps.DirectionsStatus.REQUEST_DENIED] = "The webpage is not allowed to use the directions service.";
-  DIR_STATUS_MSG[google.maps.DirectionsStatus.UNKNOWN_ERROR] = "A directions request could not be processed due to a server error. The request may succeed if you try again.";
-  DIR_STATUS_MSG[google.maps.DirectionsStatus.ZERO_RESULTS] = "No route could be found between the origin and destination.";
   var labels = new Array();
   var addr = new Array();
   var wpActive = new Array();
@@ -74,9 +59,12 @@
   var costBackward;
   var improved = false;
   var chunkNode;
+  var okChunkNode;
   var numDirectionsComputed = 0;
   var numDirectionsNeeded = 0;
   var cachedDirections = false;
+  var requestLimitWait = 1000;
+  var vb;  // Object used to store travel info like travel mode etc. Needed for route renderer.
 
   var onSolveCallback = function(){};
   var onProgressCallback = null;
@@ -241,8 +229,8 @@
    * if mode is 1, we start at node 0 and end at node numActive-1.
    */
   function tspAntColonyK2(mode) {
-    var alfa = 1.0; // The importance of the previous trails
-    var beta = 1.0; // The importance of the durations
+    var alfa = 0.1; // The importance of the previous trails
+    var beta = 2.0; // The importance of the durations
     var rho = 0.1;  // The decay rate of the pheromone trails
     var asymptoteFactor = 0.9; // The sharpness of the reward as the solutions approach the best solution
     var pher = new Array();
@@ -532,7 +520,9 @@
     return(latLng.toString().substr(1,latLng.toString().length-2));
   }
 
-  function makeDirWp(latLng) {
+  function makeDirWp(latLng, address) {
+    if (address != null && address != "")
+      return ({ location: address, stopover: true });
     return ({ location: latLng,
 	  stopover: true });
   }
@@ -544,15 +534,15 @@
 	if (nextAbove == -1) {
 	  nextAbove = i;
 	} else {
-	  wayArr.push(makeDirWp(waypoints[i]));
-	  wayArr.push(makeDirWp(waypoints[curr]));
+	  wayArr.push(makeDirWp(waypoints[i], addresses[i]));
+	  wayArr.push(makeDirWp(waypoints[curr], addresses[curr]));
 	}
       }
     }
     if (nextAbove != -1) {
-      wayArr.push(makeDirWp(waypoints[nextAbove]));
+      wayArr.push(makeDirWp(waypoints[nextAbove], addresses[nextAbove]));
       getWayArr(nextAbove);
-      wayArr.push(makeDirWp(waypoints[curr]));
+      wayArr.push(makeDirWp(waypoints[curr], addresses[curr]));
     }
   }
 
@@ -601,7 +591,7 @@
 
     for (var i = 0; i < waypoints.length; ++i) {
       if (wpActive[i]) {
-	wayArr.push(makeDirWp(waypoints[i]));
+	wayArr.push(makeDirWp(waypoints[i], addresses[i]));
 	getWayArr(i);
 	break;
       }
@@ -615,8 +605,9 @@
       distances = new Array();
       durations = new Array();
       chunkNode = 0;
+      okChunkNode = 0;
       if (typeof onProgressCallback == 'function') {
-	    onProgressCallback(tsp);
+	onProgressCallback(tsp);
       }
       nextChunk(mode);
     }
@@ -624,20 +615,23 @@
 
   function nextChunk(mode) {
     //  alert("nextChunk");
+    chunkNode = okChunkNode;
     if (chunkNode < wayArr.length) {
       var wayArrChunk = new Array();
       for (var i = 0; i < maxSize && i + chunkNode < wayArr.length; ++i) {
-	wayArrChunk.push(wayArr[chunkNode+i]);
+	      wayArrChunk.push(wayArr[chunkNode+i]);
       }
-      var origin = wayArrChunk[0].location;
-      var destination = wayArrChunk[wayArrChunk.length-1].location;
+      var origin;
+      var destination;
+      origin = wayArrChunk[0].location;
+      destination = wayArrChunk[wayArrChunk.length-1].location;
       var wayArrChunk2 = new Array();
       for (var i = 1; i < wayArrChunk.length - 1; i++) {
-	wayArrChunk2[i-1] = wayArrChunk[i];
+      	wayArrChunk2[i-1] = wayArrChunk[i];
       }
       chunkNode += maxSize;
       if (chunkNode < wayArr.length-1) {
-	chunkNode--;
+	      chunkNode--;
       }
 	    
       var myGebDirections = new google.maps.DirectionsService();
@@ -649,24 +643,27 @@
 	    avoidHighways: avoidHighways,
 	    travelMode: travelMode }, 
 	function(directionsResult, directionsStatus) {
-	  if (directionsStatus != google.maps.DirectionsStatus.OK) {
-	    var errorMsg = DIR_STATUS_MSG[directionsStatus];
-	    var doNotContinue = true;
-	    alert("Request failed: " + errorMsg);
-	  } else {
-	    //alert("Request completed!");
-	    // Save legs, distances and durations
-	    for (var i = 0; i < directionsResult.routes[0].legs.length; ++i) {
-	      ++numDirectionsComputed;
-	      legsTmp.push(directionsResult.routes[0].legs[i]);
-	      durations.push(directionsResult.routes[0].legs[i].duration.value);
-	      distances.push(directionsResult.routes[0].legs[i].distance.value);
-	    }
-	    if (typeof onProgressCallback == 'function') {
-	      onProgressCallback(tsp);
-	    }
+	  if (directionsStatus == google.maps.DirectionsStatus.OK) {
+      //alert("Request completed!");
+      // Save legs, distances and durations
+      vb = directionsResult.vb;
+      for (var i = 0; i < directionsResult.routes[0].legs.length; ++i) {
+        ++numDirectionsComputed;
+        legsTmp.push(directionsResult.routes[0].legs[i]);
+        durations.push(directionsResult.routes[0].legs[i].duration.value);
+        distances.push(directionsResult.routes[0].legs[i].distance.value);
+      }
+      onProgressCallback(tsp);
+      okChunkNode = chunkNode;
+      nextChunk(mode);
+    } else if (directionsStatus == google.maps.DirectionsStatus.OVER_QUERY_LIMIT) {
+      // requestLimitWait *= 2;
+      setTimeout(function(){ nextChunk(mode) }, requestLimitWait);
+ 	  } else {
+      var errorMsg = DIR_STATUS_MSG[directionsStatus];
+      var doNotContinue = true;
+      alert("Request failed: " + errorMsg);
 	  }
-	  nextChunk(mode);
 	});
     } else {
       readyTsp(mode);
@@ -741,6 +738,7 @@
     var bestPathLatLngStr = "";
     var directionsResultLegs = new Array();
     var directionsResultRoutes = new Array();
+    var directionsResultOverview = new Array();
     var directionsResultBounds = new google.maps.LatLngBounds();
     for (var i = 1; i < bestPath.length; ++i) {
       directionsResultLegs.push(legs[bestPath[i-1]][bestPath[i]]);
@@ -748,11 +746,16 @@
     for (var i = 0; i < bestPath.length; ++i) {
       bestPathLatLngStr += makeLatLng(waypoints[wpIndices[bestPath[i]]]) + "\n";
       directionsResultBounds.extend(waypoints[wpIndices[bestPath[i]]]);
+      directionsResultOverview.push(waypoints[wpIndices[bestPath[i]]]);
     }
     directionsResultRoutes.push({ 
       legs: directionsResultLegs,
-	  bounds: directionsResultBounds });
-    gebDirectionsResult = { routes: directionsResultRoutes };
+	  bounds: directionsResultBounds,
+    copyrights: "Map data ©2012 Google",
+    overview_path: directionsResultOverview,
+    warnings: new Array(),
+     });
+    gebDirectionsResult = { routes: directionsResultRoutes, vb: vb };
 
     if (onFatalErrorListener)
       google.maps.event.removeListener(onFatalErrorListener);
@@ -827,6 +830,8 @@
 	  if (results.length >= 1) {
 	    var latLng = results[0].geometry.location;
 	    var freeInd = addWaypoint(latLng, label);
+	    address = address.replace("'", "");
+	    address = address.replace("\"", "");
 	    addresses[freeInd] = address;
 	    if (typeof callback == 'function')
 	      callback(address, latLng);
@@ -860,6 +865,23 @@
   }
 
   BpTspSolver.prototype.startOver = function() {
+    GEO_STATUS_MSG = new Array();
+    GEO_STATUS_MSG[google.maps.GeocoderStatus.OK] = "Success.";
+    GEO_STATUS_MSG[google.maps.GeocoderStatus.INVALID_REQUEST] = "Request was invalid.";
+    GEO_STATUS_MSG[google.maps.GeocoderStatus.ERROR] = "There was a problem contacting the Google servers.";
+    GEO_STATUS_MSG[google.maps.GeocoderStatus.OVER_QUERY_LIMIT] = "The webpage has gone over the requests limit in too short a period of time.";
+    GEO_STATUS_MSG[google.maps.GeocoderStatus.REQUEST_DENIED] = "The webpage is not allowed to use the geocoder.";
+    GEO_STATUS_MSG[google.maps.GeocoderStatus.UNKNOWN_ERROR] = "A geocoding request could not be processed due to a server error. The request may succeed if you try again.";
+    GEO_STATUS_MSG[google.maps.GeocoderStatus.ZERO_RESULTS] = "No result was found for this GeocoderRequest.";
+    DIR_STATUS_MSG = new Array();
+    DIR_STATUS_MSG[google.maps.DirectionsStatus.INVALID_REQUEST] = "The DirectionsRequest provided was invalid.";
+    DIR_STATUS_MSG[google.maps.DirectionsStatus.MAX_WAYPOINTS_EXCEEDED] = "Too many DirectionsWaypoints were provided in the DirectionsRequest. The total allowed waypoints is 8, plus the origin and destination.";
+    DIR_STATUS_MSG[google.maps.DirectionsStatus.NOT_FOUND] = "At least one of the origin, destination, or waypoints could not be geocoded.";
+    DIR_STATUS_MSG[google.maps.DirectionsStatus.OK] = "The response contains a valid DirectionsResult.";
+    DIR_STATUS_MSG[google.maps.DirectionsStatus.OVER_QUERY_LIMIT] = "The webpage has gone over the requests limit in too short a period of time.";
+    DIR_STATUS_MSG[google.maps.DirectionsStatus.REQUEST_DENIED] = "The webpage is not allowed to use the directions service.";
+    DIR_STATUS_MSG[google.maps.DirectionsStatus.UNKNOWN_ERROR] = "A directions request could not be processed due to a server error. The request may succeed if you try again.";
+    DIR_STATUS_MSG[google.maps.DirectionsStatus.ZERO_RESULTS] = "No route could be found between the origin and destination.";
     waypoints = new Array();
     addresses = new Array();
     labels = new Array();
@@ -880,6 +902,7 @@
     travelMode = google.maps.DirectionsTravelMode.DRIVING;
     numActive = 0;
     chunkNode = 0;
+    okChunkNode = 0;
     addressRequests = 0;
     addressProcessing = false;
     requestNum = 0;
