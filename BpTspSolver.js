@@ -775,7 +775,7 @@
     overview_path: directionsResultOverview,
     warnings: new Array(),
      });
-    gebDirectionsResult = { routes: directionsResultRoutes, vb: vb };
+    gebDirectionsResult = { routes: directionsResultRoutes, vb: vb, Cb: { travelmode: travelMode } };
 
     if (onFatalErrorListener)
       google.maps.event.removeListener(onFatalErrorListener);
