@@ -89,6 +89,8 @@
   var onLoadListener = null;
   var onFatalErrorListener = null;
 
+  var directionunits = google.maps.UnitSystem.METRIC;
+
   /** Computes greedy (nearest-neighbor solution to the TSP)
    */
   function tspGreedy(mode) {
@@ -622,7 +624,7 @@
       chunkNode = 0;
       okChunkNode = 0;
       if (typeof onProgressCallback == 'function') {
-	onProgressCallback(tsp);
+	    onProgressCallback(tsp);
       }
       nextChunk(mode);
     }
@@ -634,7 +636,7 @@
     if (chunkNode < wayArr.length) {
       var wayArrChunk = new Array();
       for (var i = 0; i < maxSize && i + chunkNode < wayArr.length; ++i) {
-	      wayArrChunk.push(wayArr[chunkNode+i]);
+	wayArrChunk.push(wayArr[chunkNode+i]);
       }
       var origin;
       var destination;
@@ -642,11 +644,11 @@
       destination = wayArrChunk[wayArrChunk.length-1].location;
       var wayArrChunk2 = new Array();
       for (var i = 1; i < wayArrChunk.length - 1; i++) {
-      	wayArrChunk2[i-1] = wayArrChunk[i];
+	wayArrChunk2[i-1] = wayArrChunk[i];
       }
       chunkNode += maxSize;
       if (chunkNode < wayArr.length-1) {
-	      chunkNode--;
+	chunkNode--;
       }
 	    
       var myGebDirections = new google.maps.DirectionsService();
@@ -656,21 +658,22 @@
 	    destination: destination,
 	    waypoints: wayArrChunk2,
 	    avoidHighways: avoidHighways,
+        unitSystem: directionunits,
 	    travelMode: travelMode }, 
 	function(directionsResult, directionsStatus) {
 	  if (directionsStatus == google.maps.DirectionsStatus.OK) {
-      //alert("Request completed!");
-      // Save legs, distances and durations
+	    //alert("Request completed!");
+	    // Save legs, distances and durations
       vb = directionsResult.vb;
-      for (var i = 0; i < directionsResult.routes[0].legs.length; ++i) {
-        ++numDirectionsComputed;
-        legsTmp.push(directionsResult.routes[0].legs[i]);
-        durations.push(directionsResult.routes[0].legs[i].duration.value);
-        distances.push(directionsResult.routes[0].legs[i].distance.value);
-      }
-      if (typeof onProgressCallback == 'function') {
-	onProgressCallback(tsp);
-      }
+	    for (var i = 0; i < directionsResult.routes[0].legs.length; ++i) {
+	      ++numDirectionsComputed;
+	      legsTmp.push(directionsResult.routes[0].legs[i]);
+	      durations.push(directionsResult.routes[0].legs[i].duration.value);
+	      distances.push(directionsResult.routes[0].legs[i].distance.value);
+	    }
+	    if (typeof onProgressCallback == 'function') {
+	      onProgressCallback(tsp);
+	    }
       okChunkNode = chunkNode;
       nextChunk(mode);
     } else if (directionsStatus == google.maps.DirectionsStatus.OVER_QUERY_LIMIT) {
@@ -911,6 +914,7 @@
     onSolveCallback = function(){};
     onProgressCallback = null;
     doNotContinue = false;
+    directionunits = google.maps.UnitSystem.METRIC;
   }
     
   /* end (edited) OptiMap code */
@@ -1126,6 +1130,15 @@
 
     directions(1);
   };
+
+  BpTspSolver.prototype.setDirectionUnits = function(mOrKm) {
+    if (mOrKm == "m") {
+        directionunits = google.maps.UnitSystem.IMPERIAL;
+    }
+    else {
+        directionunits = google.maps.UnitSystem.METRIC;
+    }
+  }
 
   BpTspSolver.prototype.setOnProgressCallback = function(callback) {
     onProgressCallback = callback;
