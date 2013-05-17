@@ -64,7 +64,7 @@
   var numDirectionsNeeded = 0;
   var cachedDirections = false;
   var requestLimitWait = 1000;
-  var vb;  // Object used to store travel info like travel mode etc. Needed for route renderer.
+  var fakeDirResult; // Object used to store travel info like travel mode etc. Needed for route renderer.
 
   var onSolveCallback = function(){};
   var onProgressCallback = null;
@@ -609,7 +609,7 @@
       chunkNode = 0;
       okChunkNode = 0;
       if (typeof onProgressCallback == 'function') {
-	    onProgressCallback(tsp);
+	onProgressCallback(tsp);
       }
       nextChunk(mode);
     }
@@ -643,13 +643,14 @@
 	    destination: destination,
 	    waypoints: wayArrChunk2,
 	    avoidHighways: avoidHighways,
-        unitSystem: directionunits,
+	    unitSystem: directionunits,
 	    travelMode: travelMode }, 
 	function(directionsResult, directionsStatus) {
 	  if (directionsStatus == google.maps.DirectionsStatus.OK) {
+	    requestLimitWait = 1000;
 	    //alert("Request completed!");
 	    // Save legs, distances and durations
-      vb = directionsResult.vb;
+	    fakeDirResult = directionsResult;
 	    for (var i = 0; i < directionsResult.routes[0].legs.length; ++i) {
 	      ++numDirectionsComputed;
 	      legsTmp.push(directionsResult.routes[0].legs[i]);
@@ -659,15 +660,15 @@
 	    if (typeof onProgressCallback == 'function') {
 	      onProgressCallback(tsp);
 	    }
-      okChunkNode = chunkNode;
-      nextChunk(mode);
-    } else if (directionsStatus == google.maps.DirectionsStatus.OVER_QUERY_LIMIT) {
-      // requestLimitWait *= 2;
-      setTimeout(function(){ nextChunk(mode) }, requestLimitWait);
+	    okChunkNode = chunkNode;
+	    nextChunk(mode);
+	  } else if (directionsStatus == google.maps.DirectionsStatus.OVER_QUERY_LIMIT) {
+	    requestLimitWait *= 2;
+	    setTimeout(function(){ nextChunk(mode) }, requestLimitWait);
  	  } else {
-      var errorMsg = DIR_STATUS_MSG[directionsStatus];
-      var doNotContinue = true;
-      alert("Request failed: " + errorMsg);
+	    var errorMsg = DIR_STATUS_MSG[directionsStatus];
+	    var doNotContinue = true;
+	    alert("Request failed: " + errorMsg);
 	  }
 	});
     } else {
@@ -756,11 +757,12 @@
     directionsResultRoutes.push({ 
       legs: directionsResultLegs,
 	  bounds: directionsResultBounds,
-    copyrights: "Map data ©2012 Google",
-    overview_path: directionsResultOverview,
-    warnings: new Array(),
-     });
-    gebDirectionsResult = { routes: directionsResultRoutes, vb: vb, Cb: { travelmode: travelMode } };
+	  copyrights: "Map data ©2012 Google",
+	  overview_path: directionsResultOverview,
+	  warnings: new Array(),
+	  });
+    gebDirectionsResult = fakeDirResult;
+    gebDirectionsResult.routes = directionsResultRoutes;
 
     if (onFatalErrorListener)
       google.maps.event.removeListener(onFatalErrorListener);
@@ -1133,10 +1135,10 @@
 
   BpTspSolver.prototype.setDirectionUnits = function(mOrKm) {
     if (mOrKm == "m") {
-        directionunits = google.maps.UnitSystem.IMPERIAL;
+      directionunits = google.maps.UnitSystem.IMPERIAL;
     }
     else {
-        directionunits = google.maps.UnitSystem.METRIC;
+      directionunits = google.maps.UnitSystem.METRIC;
     }
   }
 
