@@ -29,6 +29,7 @@
   var maxSize = 10;     // Max number of waypoints in one Google driving directions request.
   var maxTripSentry = 2000000000; // Approx. 63 years., this long a route should not be reached...
   var avoidHighways = false; // Whether to avoid highways. False by default.
+  var avoidTolls = false; // Whether to avoid toll roads. False by default.
   var travelMode;
   var distIndex;
   var waypoints = new Array();
@@ -643,6 +644,7 @@
 	    destination: destination,
 	    waypoints: wayArrChunk2,
 	    avoidHighways: avoidHighways,
+	    avoidTolls: avoidTolls,
 	    unitSystem: directionunits,
 	    travelMode: travelMode }, 
 	function(directionsResult, directionsStatus) {
@@ -1076,6 +1078,14 @@
 
   BpTspSolver.prototype.setAvoidHighways = function(avoid) {
     avoidHighways = avoid;
+  }
+
+  BpTspSolver.prototype.getAvoidTolls = function() {
+    return avoidTolls;
+  }
+
+  BpTspSolver.prototype.setAvoidTolls = function(avoid) {
+    avoidTolls = avoid;
   }
 
   BpTspSolver.prototype.getTravelMode = function() {
